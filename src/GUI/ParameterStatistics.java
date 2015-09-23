@@ -5,8 +5,13 @@ import java.awt.Dimension;
 import java.awt.ScrollPane;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -20,6 +25,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.text.html.parser.Entity;
@@ -55,12 +61,14 @@ public class ParameterStatistics extends JPanel {
 
 	private JPanel panShow;
 
+	private JTextArea rstArea;
+	
 	private List<PacketInfo> latestPackets;
 
 	public ParameterStatistics() {
 		this.setLayout(null);
 
-		JLabel lbl1 = new JLabel("参数统计");
+		JLabel lbl1 = new JLabel("输入路径");
 		lbl1.setBounds(220, 50, 100, 30);
 		this.add(lbl1);
 
@@ -70,14 +78,14 @@ public class ParameterStatistics extends JPanel {
 		pathModel.setBounds(400, 50, 450, 30);
 		this.add(pathModel);
 		
-		JLabel lbl2 = new JLabel("输出路径");
-		lbl2.setBounds(220, 100, 100, 30);
-		this.add(lbl2);
+//		JLabel lbl2 = new JLabel("输出路径");
+//		lbl2.setBounds(220, 100, 100, 30);
+//		this.add(lbl2);
 
-		pathOutput = new PathField(false, true, null);
-		pathOutput.setPath(Setting.getWorkspacePath() + "generated");
-		pathOutput.setBounds(400, 100, 450, 30);
-		this.add(pathOutput);
+//		pathOutput = new PathField(false, true, null);
+//		pathOutput.setPath(Setting.getWorkspacePath() + "generated");
+//		pathOutput.setBounds(400, 100, 450, 30);
+//		this.add(pathOutput);
 
 		ParaLabel = new JLabel("参数设置");
 		ParaLabel.setBounds(220, 150, 100, 30);
@@ -114,14 +122,109 @@ public class ParameterStatistics extends JPanel {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				// TODO 加入各参数统计并输出结果
+				showStatistics();
 			}
 		});
 		this.add(button1);
 
-		panShow = new JPanel();
-		panShow.setBounds(0, 300, 1200, 500);
-		panShow.setBackground(Color.WHITE);
-		this.add(panShow);
+//		panShow = new JPanel();
+//		panShow.setBounds(0, 300, 1200, 500);
+//		panShow.setBackground(Color.WHITE);
+//		this.add(panShow);
+		
+		rstArea = new JTextArea();
+		rstArea.setBounds(220,350,400,200);
+		rstArea.setLineWrap(true);
+		this.add(rstArea);
 
+	}
+	
+	private void showStatistics() {
+		File input = new File(pathModel.getPath());
+		File output = new File(pathModel.getPath()+".stat");
+		
+		if (!input.exists()) {
+			JOptionPane.showMessageDialog(this, "输入流量文件不存在");
+			return;
+		} else {
+			if (!input.getName().endsWith(".gen")) {
+				JOptionPane.showMessageDialog(this, "输入不是一个流量模拟文件");
+				return;
+			}
+		}
+		
+		if (!output.exists()) {
+			try {
+				output.createNewFile();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+		double PC_lim = Double.parseDouble(txtPC.getText());
+		double PN_lim = Double.parseDouble(txtPN.getText());
+		
+//		panShow.removeAll();
+		
+		int PC_count = 0,PN_count = 0;
+		double UL = 0,DL = 0;
+		
+		StringBuffer str = new StringBuffer("");
+		double lastULTime = 0,lastDLTime = 0,lastTime = 0;
+		try {
+			FileReader fr = new FileReader(input);
+			int ch = 0;
+			while ((ch = fr.read())!=-1)
+			{
+				if ((char)ch != '\0'&& (char)ch != '\n' && (char)ch != '\r') str.append((char)ch);
+				else {
+					int sp1 = str.indexOf(","),sp2 = str.lastIndexOf(",");
+					String Time = str.substring(0,sp1-1),Size = str.substring(sp1+1,sp2),isUL = str.substring(sp2+1);
+					double time = Double.parseDouble(Time);
+					int size = Integer.parseInt(Size);
+					if (isUL.equals("true")) 
+					{
+						UL+=size;
+						if ((time-lastTime)>PC_lim) PC_count++;
+//						if ((time-lastULTime)>PC_lim) PC_count++;
+//						lastULTime = time;
+					}
+					else 
+					{
+						DL+=size;
+						if ((time-lastTime)>PN_lim) PN_count++;
+//						if ((time-lastDLTime)>PN_lim) PN_count++;
+//						lastDLTime = time;
+					}
+					lastTime = time;
+					str.delete(0, str.length());
+				}
+			}
+			fr.close();
+		} catch (IOException e)
+		{
+			e.printStackTrace();
+			System.out.println("统计文件出错");
+		}
+		
+		rstArea.setText("PS Call Number:	"+Integer.toString(PC_count)+"\n"
+		+ "Paging Number:	"+Integer.toString(PN_count)+"\n"
+		+ "Upload Packet Size:	"+Double.toString(UL)+"\n"
+		+ "Download Packet Size:	"+Double.toString(DL)+"\n");
+		
+		try {
+			FileWriter fw = new FileWriter(output);
+			fw.write("PS Call Number:	"+Integer.toString(PC_count)+"\r\n"
+		+ "Paging Number:	"+Integer.toString(PN_count)+"\r\n"
+		+ "Upload Packet Size:	"+Double.toString(UL)+"\r\n"
+		+ "Download Packet Size:	"+Double.toString(DL)+"\r\n");
+			fw.close();
+		}catch (IOException e)
+		{
+			e.printStackTrace();
+			System.out.println("输出结果出错");
+		}
+		
 	}
 }
