@@ -218,7 +218,7 @@ public class ParameterStatistics extends JPanel {
 			fw.write("PS Call Number:	"+Integer.toString(PC_count)+"\r\n"
 		+ "Paging Number:	"+Integer.toString(PN_count)+"\r\n"
 		+ "Upload Packet Size:	"+Double.toString(UL)+"\r\n"
-		+ "Download Packet Size:	"+Double.toString(DL)+"\r\n");
+		+ "Download Packet Size:	"+Double.toString(DL)+"\r\n" );
 			fw.close();
 		}catch (IOException e)
 		{

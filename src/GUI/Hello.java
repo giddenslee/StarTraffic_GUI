@@ -46,7 +46,8 @@ class MainFrame extends JFrame{
 	   tabbedPane.addTab("流量建模", new TrafficModeling());
 	   tabbedPane.addTab("流量生成", new TrafficGeneration());
 	   tabbedPane.addTab("设置", new Setting());
-/*+1*/	   
+/*+2*/ 
+	   tabbedPane.addTab("流量综合", new TrafficCombound());
 	   tabbedPane.addTab("参数统计", new ParameterStatistics());
 
 	   add(tabbedPane, "Center");
