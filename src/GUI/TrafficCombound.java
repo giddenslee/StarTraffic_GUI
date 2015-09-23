@@ -13,6 +13,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 
@@ -49,18 +50,14 @@ public class TrafficCombound extends JPanel {
 	private PathField pathModel1;
 	private PathField pathModel2;
 
-	private PathField pathOutput;
+	private JTextField txtTime;
 	
-//	private JLabel ParaLabel;
-//	
-//	private JTextField txtPC;
-//	private JTextField txtPN;
+	private PathField pathOutput;
 
 	private JButton btnStart;
 
 	private JPanel panShow;
 
-//	private JTextArea rstArea;
 	
 	private List<PacketInfo> latestPackets;
 
@@ -72,8 +69,8 @@ public class TrafficCombound extends JPanel {
 		this.add(lbl1);
 
 		pathModel1 = new PathField(true, false, new ExtensionFileFilter(
-				"生成流量文件", "gen"));
-		pathModel1.setPath(Setting.getWorkspacePath() + "generated");
+				"生成流量文件", "model"));
+		pathModel1.setPath(Setting.getWorkspacePath() + "models");
 		pathModel1.setBounds(400, 50, 450, 30);
 		this.add(pathModel1);
 		
@@ -82,8 +79,8 @@ public class TrafficCombound extends JPanel {
 		this.add(lbl2);
 
 		pathModel2 = new PathField(true, false, new ExtensionFileFilter(
-				"生成流量文件", "gen"));
-		pathModel2.setPath(Setting.getWorkspacePath() + "generated");
+				"生成流量文件", "model"));
+		pathModel2.setPath(Setting.getWorkspacePath() + "models");
 		pathModel2.setBounds(400, 100, 450, 30);
 		this.add(pathModel2);
 
@@ -93,175 +90,162 @@ public class TrafficCombound extends JPanel {
 		
 		pathOutput = new PathField(false,true,null);
 		pathOutput.setPath(Setting.getWorkspacePath()+"generated");
-		pathOutput.setBounds(400,150,100,30);
+		pathOutput.setBounds(400,150,450,30);
 		this.add(pathOutput);
 		
+		JLabel lbl4 = new JLabel("生成时长");
+		lbl4.setBounds(220,200,150,30);
+		this.add(lbl4);
 		
-//		ParaLabel = new JLabel("参数设置");
-//		ParaLabel.setBounds(220, 150, 100, 30);
-//		this.add(ParaLabel);		
+		txtTime = new JTextField("10");
+		txtTime.setBounds(400,200,150,30);
+		this.add(txtTime);
 		
-//		JLabel lbl4 = new JLabel("PS Call响应阈值:");
-//		lbl4.setBounds(220, 200, 200, 30);
-//		this.add(lbl4);
-//		
-//		txtPC = new JTextField("10");
-//		txtPC.setBounds(450, 200, 100, 30);
-//		this.add(txtPC);
-//
-//		JLabel lbl5 = new JLabel("秒");
-//		lbl5.setBounds(620, 200, 150, 30);
-//		this.add(lbl5);
-		
-//		JLabel lbl6 = new JLabel("Paging Number响应阈值:");
-//		lbl6.setBounds(220, 250, 200, 30);
-//		this.add(lbl6);
-//		
-//		txtPN = new JTextField("10");
-//		txtPN.setBounds(450, 250, 100, 30);
-//		this.add(txtPN);
-//
-//		JLabel lbl7 = new JLabel("秒");
-//		lbl7.setBounds(620, 250, 100, 30);
-//		this.add(lbl7);
+		JLabel lbl5 = new JLabel("秒");
+		lbl5.setBounds(570,200,100,30);
+		this.add(lbl5);
 
-		JButton button1 = new JButton("开始统计");
-		button1.setBounds(900, 50, 150, 30);
-		button1.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				// TODO 加入各参数统计并输出结果
-				TrafficMix();
-			}
-		});
-		this.add(button1);
-
-//		panShow = new JPanel();
-//		panShow.setBounds(0, 300, 1200, 500);
-//		panShow.setBackground(Color.WHITE);
-//		this.add(panShow);
-		
-//		rstArea = new JTextArea();
-//		rstArea.setBounds(220,350,400,200);
-//		rstArea.setLineWrap(true);
-//		this.add(rstArea);
-		
-//		StringBuffer jta = new StringBuffer();
-//		ArrayList af = new ArrayList();
-//		JFileChooser addChooser=new JFileChooser(".");
-//        addChooser.setFileSelectionMode(JFileChooser.FILES_ONLY); 
-//        //该方法设置为true允许选择多个文件
-//        addChooser.setMultiSelectionEnabled(true); 
-//        int returnval=addChooser.showOpenDialog(this);   
-//        if(returnval==JFileChooser.APPROVE_OPTION)
-//        { 
-//            File[] files=addChooser.getSelectedFiles(); 
-//            String str=""; 
-//            for (File file : files) { 	//等价于for (int i=0;i<files.length;i++)
-//                af.add(file); 
-//                if(file.isDirectory()) 
-//                    str=file.getPath(); 
-//                else{ 
-//                  str=file.getPath()+file.getName(); 
-//                } 
-//                jta.append(str+"\n"); 
-//                 
-//            } 
-//        } 
-         
+		panShow = new JPanel();
+		panShow.setBounds(0, 240, 1200, 500);
+		panShow.setBackground(Color.WHITE);
+		this.add(panShow);
+		 
+		this.add(getStartButton(),null);
     }
 
 	
 	private void TrafficMix() {
 		File input1 = new File(pathModel1.getPath());
 		File input2 = new File(pathModel2.getPath());
-		File output = new File(pathOutput.getPath()+".stat");
+		File output = new File(pathOutput.getPath());
 		
+		double endTime = 0;
+
+		try {
+			endTime = Double.parseDouble(txtTime.getText());
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(this, "输入时间有误");
+			return;
+		}
+
 		if (!input1.exists()) {
-			JOptionPane.showMessageDialog(this, "输入流量文件1不存在");
+			JOptionPane.showMessageDialog(this, "输入模型文件1不存在");
 			return;
 		} else {
-			if (!input1.getName().endsWith(".gen")) {
-				JOptionPane.showMessageDialog(this, "输入1不是一个流量模拟文件");
+			if (!input1.getName().endsWith(".model")) {
+				JOptionPane.showMessageDialog(this, "输入1不是一个模型文件");
 				return;
 			}
 		}
 		
 		if (!input2.exists()) {
-			JOptionPane.showMessageDialog(this, "输入流量文件2不存在");
+			JOptionPane.showMessageDialog(this, "输入模型文件2不存在");
 			return;
 		} else {
-			if (!input2.getName().endsWith(".gen")) {
-				JOptionPane.showMessageDialog(this, "输入2不是一个流量模拟文件");
+			if (!input2.getName().endsWith(".model")) {
+				JOptionPane.showMessageDialog(this, "输入2不是一个模型文件");
 				return;
 			}
 		}
-		
-		if (!output.exists()) {
-			try {
-				output.createNewFile();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+
+		if (!output.exists() || !output.isDirectory()) {
+			JOptionPane.showMessageDialog(this, "输出路径不存在");
+			return;
 		}
-		
-		StringBuffer str = new StringBuffer("");
+
+		ArrayList<String> modelText1,modelText2;
+		TrafficModel model1 = null,model2 = null;
 		try {
-			FileReader fr1 = new FileReader(input1);
-			FileReader fr2 = new FileReader(input2);
-			int ch1 = 0,ch2 = 0;
-			while ((ch1 = fr1.read())!=-1 || (ch2 = fr2.read())!=-1)
-			{
-				if ((char)ch1 != '\0'&& (char)ch1 != '\n' && (char)ch1 != '\r') str.append((char)ch1);
-				else {
-					int sp1 = str.indexOf(","),sp2 = str.lastIndexOf(",");
-					String Time = str.substring(0,sp1-1),Size = str.substring(sp1+1,sp2),isUL = str.substring(sp2+1);
-					double time = Double.parseDouble(Time);
-					int size = Integer.parseInt(Size);
-					if (isUL.equals("true")) 
-					{
-//						UL+=size;
-//						if ((time-lastTime)>PC_lim) PC_count++;
-//						if ((time-lastULTime)>PC_lim) PC_count++;
-//						lastULTime = time;
-					}
-					else 
-					{
-//						DL+=size;
-//						if ((time-lastTime)>PN_lim) PN_count++;
-//						if ((time-lastDLTime)>PN_lim) PN_count++;
-//						lastDLTime = time;
-					}
-//					lastTime = time;
-					str.delete(0, str.length());
-				}
-			}
-			fr1.close();
-		} catch (IOException e)
-		{
+			modelText1 = TextInOut.readFile(input1.getAbsolutePath());
+			model1 = TrafficModel.fromJson(modelText1.get(0));
+			modelText2 = TextInOut.readFile(input2.getAbsolutePath());
+			model2 = TrafficModel.fromJson(modelText2.get(0));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
-			System.out.println("统计文件出错");
+		}
+		if ((model1 == null)||(model2 == null)) {
+			JOptionPane.showMessageDialog(this, "读取模型文件失败");
+			return;
+		}
+		List<PacketInfo> packets = model1.generatePackets(endTime);
+		List<PacketInfo> packets2 = model2.generatePackets(endTime);
+		packets.addAll(packets2);
+		Collections.sort(packets);
+		
+		latestPackets = packets;
+		ArrayList<PacketInfo> upPackets = new ArrayList<PacketInfo>();
+		ArrayList<PacketInfo> dlPackets = new ArrayList<PacketInfo>();
+
+		PacketCollector.split(packets, upPackets, dlPackets);
+		
+		try {
+			String modelName1 = input1.getName();
+			String modelName2 = input2.getName();
+			modelName1 = modelName1.substring(0,
+					modelName1.length() - ".model".length());
+			modelName2 = modelName2.substring(0,
+					modelName2.length() - ".model".length());
+			String outputName = output.getAbsolutePath() + "\\" + modelName1+"&"+modelName2;
+
+			PacketCollector.WriteToFile(packets, outputName + ".gen");
+			PacketCollector.WriteToFile(dlPackets, outputName + ".dl.gen");
+			PacketCollector.WriteToFile(upPackets, outputName + ".up.gen");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		
-//		rstArea.setText("PS Call Number:	"+Integer.toString(PC_count)+"\n"
-//		+ "Paging Number:	"+Integer.toString(PN_count)+"\n"
-//		+ "Upload Packet Size:	"+Double.toString(UL)+"\n"
-//		+ "Download Packet Size:	"+Double.toString(DL)+"\n");
+		showTraffic();
 		
-//		try {
-//			FileWriter fw = new FileWriter(output);
-//			fw.write("PS Call Number:	"+Integer.toString(PC_count)+"\r\n"
-//		+ "Paging Number:	"+Integer.toString(PN_count)+"\r\n"
-//		+ "Upload Packet Size:	"+Double.toString(UL)+"\r\n"
-//		+ "Download Packet Size:	"+Double.toString(DL)+"\r\n" );
-//			fw.close();
-//		}catch (IOException e)
-//		{
-//			e.printStackTrace();
-//			System.out.println("输出结果出错");
-//		}
-		
+	}
+	
+	private void showTraffic() {
+		panShow.removeAll();
+		ArrayList<PacketInfo> upPackets = new ArrayList<PacketInfo>();
+		ArrayList<PacketInfo> dlPackets = new ArrayList<PacketInfo>();
+		PacketCollector.split(latestPackets, upPackets, dlPackets);
+
+		double endTime = Double.parseDouble(txtTime.getText());
+		XYSeries upSeries = PacketCollector.createChartSeries(upPackets,
+				"Generated Upload Traffic", 0, endTime);
+		XYSeries dlSeries = PacketCollector.createChartSeries(dlPackets,
+				"Generated Download Traffic", 0, endTime);
+
+		JFreeChart upChart = ChartFactory.createXYLineChart(
+				"Generated Upload Traffic", "Time", "Packet Length",
+				new XYSeriesCollection(upSeries), PlotOrientation.VERTICAL,
+				false, true, false);
+		JFreeChart dlChart = ChartFactory.createXYLineChart(
+				"Generated Download Traffic", "Time", "Packet Length",
+				new XYSeriesCollection(dlSeries), PlotOrientation.VERTICAL,
+				false, true, false);
+
+		ChartPanel upPanel = new ChartPanel(upChart);
+		upPanel.setPreferredSize(new Dimension(1200, 250));
+
+		ChartPanel dlPanel = new ChartPanel(dlChart);
+		dlPanel.setPreferredSize(new Dimension(1200, 250));
+
+		panShow.add(upPanel);
+		panShow.add(dlPanel);
+
+		panShow.validate();
+	}
+	private JButton getStartButton() {
+		// TODO Auto-generated method stub
+		if (btnStart == null) {
+			btnStart = new JButton("开始生成");
+			btnStart.setBounds(700, 200, 200, 30);
+			btnStart.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					// TODO Auto-generated method stub
+					TrafficMix();
+				}
+			});
+		}
+		return btnStart;
 	}
 }

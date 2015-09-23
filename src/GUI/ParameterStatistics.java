@@ -167,7 +167,7 @@ public class ParameterStatistics extends JPanel {
 		
 //		panShow.removeAll();
 		
-		int PC_count = 0,PN_count = 0;
+		int PC_count = 1,PN_count = 1;
 		double UL = 0,DL = 0;
 		
 		StringBuffer str = new StringBuffer("");
